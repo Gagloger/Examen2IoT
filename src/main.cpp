@@ -12,6 +12,9 @@ static const uint32_t GPSBaud = 9600;
 
 static int timesMeasure = 0;
 
+unsigned long lastSendTime = 0;
+const unsigned long SEND_INTERVAL = 10000;
+
 int state = 0; // estado que se encuentra la maquina
 enum Estados {
 ESTADO_INICIAL = 0,
@@ -48,14 +51,16 @@ void PrintValues(float lat, float lng, float temp, float hum){
   // Mirar como hacer el Json
   Serial.print("id:point16,");
   Serial.print("lat:");
-  Serial.print(lat);
+  Serial.print(lat, 6);
   Serial.print(",lon:");
-  Serial.print(lng);
+  Serial.print(lng, 6);
   Serial.print(",Temperatura:");
-  Serial.print(temp);
+  Serial.print(temp, 4);
   Serial.print(",Humedad:");
-  Serial.print(hum);
+  Serial.print(hum, 4);
   Serial.print("metadata:");
+
+  Serial.println();
 }
 
 void ReadTempHum(){
@@ -91,6 +96,8 @@ void CollectingProcess(){
 }
 
 void PrunningProcess(){
+  if (timesMeasure = 0) return; // evitar errores
+
   tempT /= timesMeasure;
   humT /= timesMeasure;
   latT /=  timesMeasure; 
@@ -113,9 +120,13 @@ void setup() {
   Serial.begin(115200);
   ss.begin(GPSBaud);
 
+  sensor.begin(0x40);
+
   delay(100);
   Serial.println("Starting sensors");
-  state = 1;
+  state = LEER_HyT;
+
+  lastSendTime = millis(); //Comenzar el temporizador del envio
   delay(1000);
 }
 
@@ -142,10 +153,11 @@ void loop() {
   break;
   case IMPRIMIR_VALORES:
 //Cuando este conectado enviarlos al server?
-    PrintValues(lat, lng, temp, hum);
+    PrintValues(latT, lngT, tempT, humT); // enviar o imprimir los datos recogidos hasta el momento
     smartDelay(100);
 
-    ResetValues();
+    ResetValues(); // vaciar la recoleccion de dato que ya fueron enviados
+    lastSendTime = millis(); // reiniciar temporizador
     state = LEER_HyT;
   break;
   case RECOLETAR_VALORES:
@@ -156,10 +168,13 @@ void loop() {
     state = REVISAR_TIEMPO;
   break;
   case REVISAR_TIEMPO:
-    // if(han pasado 10 seg){Enviar valores} else {seguir recolectando}
-    //state = HACER_PRUNNING;
-    //state = LEER_HyT;
+  unsigned long currentTime = millis();
 
+  if (currentTime - lastSendTime >= SEND_INTERVAL){
+    state = HACER_PRUNNING;
+  } else {
+    state = LEER_HyT;
+  }
     smartDelay(50);
   break;
   case HACER_PRUNNING:
