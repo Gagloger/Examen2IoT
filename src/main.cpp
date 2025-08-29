@@ -5,6 +5,9 @@
 #include <ClosedCube_HDC1080.h>
 #include <Arduino.h>
 
+//Examen 2 IoT, construcción y operación de un End Device
+//Nombre: Jacobo Prada Zapata
+//   ID:  481862
 
 #pragma region Variables globlales
 // Declarar variables
@@ -25,7 +28,7 @@ enum Estados {
   LEER_GPS = 2,
   IMPRIMIR_VALORES = 3,
   RECOLETAR_VALORES = 4,
-  HACER_PRUNNING = 5
+  HACER_PRUNING = 5
 };
 
 //creacion de todos los objetos necesarios para los sensores
@@ -160,7 +163,7 @@ void CheckTime(int stateToGoIfNot){
   currentTime = millis();
   
   if (currentTime - lastSendTime >= SEND_INTERVAL){
-    state = HACER_PRUNNING;
+    state = HACER_PRUNING;
   } else {
     state = stateToGoIfNot;
   }
@@ -234,7 +237,7 @@ void loop() {
     smartDelay(20);
     CheckTime(LEER_HyT);//saber si enviar o seguir leyendo
   break;
-   case HACER_PRUNNING:
+   case HACER_PRUNING:
   // Si entra aqui se preparan los valores pa subirlos al servidor
     PrunningProcess();
     state = IMPRIMIR_VALORES;
